@@ -9,6 +9,13 @@ import { Separator } from "@/components/ui/separator";
 import { CheckCircle2, XCircle, Info, Shuffle } from 'lucide-react';
 import { validateMnemonic, generateMnemonic } from 'bip39'; // Import bip39 functions
 import { wordlist } from '@/lib/bip39-wordlist'; // Keep wordlist for individual word check
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 // BIP-39 allows 12, 15, 18, 21, or 24 words.
 // Each word must be from the official BIP-39 wordlist.
@@ -52,6 +59,18 @@ const validateSeedPhrase = (phrase: string): { isValid: boolean; reason?: string
   return { isValid: true };
 };
 
+// Function to map word count to BIP-39 strength (entropy bits)
+const getStrengthForWordCount = (wordCount: number): number => {
+  switch (wordCount) {
+    case 12: return 128;
+    case 15: return 160;
+    case 18: return 192;
+    case 21: return 224;
+    case 24: return 256;
+    default: return 128; // Default to 12 words (128 bits)
+  }
+};
+
 export default function Home() {
   const [seedInput, setSeedInput] = useState<string>('');
   const [results, setResults] = useState<ValidationResult[]>([]);
@@ -79,10 +98,10 @@ export default function Home() {
     setIsValidating(false);
   };
 
-  const handleGenerateRandom = () => {
-    // Generate a 12-word mnemonic (default strength)
-    const mnemonic = generateMnemonic();
-    // Append to existing input or replace? Let's append for now.
+  const handleGenerateRandom = (wordCount: 12 | 15 | 18 | 21 | 24) => {
+    const strength = getStrengthForWordCount(wordCount);
+    const mnemonic = generateMnemonic(strength);
+    // Append to existing input on a new line
     setSeedInput(prev => prev ? `${prev}\n${mnemonic}` : mnemonic);
     // Optionally clear previous results when generating a new one
     setResults([]);
@@ -121,13 +140,23 @@ export default function Home() {
                   >
                     {isValidating ? 'Validating...' : 'Validate Phrases'}
                   </Button>
-                  <Button
-                    onClick={handleGenerateRandom}
-                    variant="outline"
-                    className="w-full sm:w-1/2"
-                  >
-                    <Shuffle className="mr-2 h-4 w-4" /> Generate Random Phrase
-                  </Button>
+                  <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full sm:w-1/2"
+                      >
+                        <Shuffle className="mr-2 h-4 w-4" /> Generate Random Phrase
+                      </Button>
+                    </DropdownMenuTrigger>
+                     <DropdownMenuContent align="end" className="w-[200px]">
+                        {[12, 15, 18, 21, 24].map((count) => (
+                          <DropdownMenuItem key={count} onSelect={() => handleGenerateRandom(count as 12 | 15 | 18 | 21 | 24)}>
+                            Generate {count} words
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                  </DropdownMenu>
                </div>
             </div>
 
@@ -149,7 +178,7 @@ export default function Home() {
                             <li key={`valid-${index}`} className="flex items-start gap-2 font-mono">
                                <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
                                <span className="flex-1">
-                                {result.phrase.split(' ').slice(0, 3).join(' ')} ... {result.phrase.split(' ').slice(-3).join(' ')}
+                                {result.phrase.split(' ').slice(0, 3).join(' ')} ... {result.phrase.split(' ').slice(-3).join(' ')} ({result.phrase.split(' ').length} words)
                                </span>
                             </li>
                           ))}
@@ -177,7 +206,7 @@ export default function Home() {
                                <XCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
                                <div className="flex-1">
                                   <span>
-                                    {result.phrase.split(' ').slice(0, 3).join(' ')} ... {result.phrase.split(' ').slice(-3).join(' ')}
+                                    {result.phrase.split(' ').slice(0, 3).join(' ')} ... {result.phrase.split(' ').slice(-3).join(' ')} ({result.phrase.split(' ').length} words)
                                   </span>
                                   {result.reason && <p className="text-xs text-muted-foreground mt-1">{result.reason}</p>}
                                </div>
@@ -196,3 +225,4 @@ export default function Home() {
     </main>
   );
 }
+
