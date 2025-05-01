@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, XCircle, Info, Shuffle } from 'lucide-react';
+import { CheckCircle2, XCircle, Info, Shuffle, Trash2 } from 'lucide-react'; // Added Trash2
 import { validateMnemonic, generateMnemonic } from 'bip39'; // Import bip39 functions
 import { wordlist } from '@/lib/bip39-wordlist'; // Keep wordlist for individual word check
 import {
@@ -107,6 +107,11 @@ export default function Home() {
     setResults([]);
   };
 
+  const handleClearAll = () => {
+    setSeedInput('');
+    setResults([]);
+  };
+
 
   const validPhrases = results.filter(r => r.isValid);
   const invalidPhrases = results.filter(r => !r.isValid);
@@ -135,7 +140,7 @@ export default function Home() {
                  <Button
                     onClick={handleValidate}
                     disabled={!seedInput || isValidating}
-                    className="w-full sm:w-1/2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="w-full sm:flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                     aria-live="polite"
                   >
                     {isValidating ? 'Validating...' : 'Validate Phrases'}
@@ -144,9 +149,9 @@ export default function Home() {
                      <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full sm:w-1/2"
+                        className="w-full sm:flex-1"
                       >
-                        <Shuffle className="mr-2 h-4 w-4" /> Generate Random Phrase
+                        <Shuffle className="mr-2 h-4 w-4" /> Generate Random
                       </Button>
                     </DropdownMenuTrigger>
                      <DropdownMenuContent align="end" className="w-[200px]">
@@ -157,6 +162,15 @@ export default function Home() {
                         ))}
                       </DropdownMenuContent>
                   </DropdownMenu>
+                  <Button
+                    onClick={handleClearAll}
+                    disabled={!seedInput && results.length === 0}
+                    variant="outline"
+                    className="w-full sm:flex-1"
+                    aria-label="Clear All Input and Results"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" /> Clear All
+                  </Button>
                </div>
             </div>
 
