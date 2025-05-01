@@ -442,7 +442,7 @@ export default function Home() {
                                 <ul className="space-y-2 font-mono text-sm">
                                     {bulkGeneratedPhrases.map((phrase, index) => (
                                         <li key={index} className="flex items-center justify-between gap-2 p-1 hover:bg-muted/50 rounded">
-                                            <span className="text-xs text-muted-foreground w-8 text-right mr-2">{index + 1}.</span>
+                                            {/* Removed the index number span */}
                                             <span className="flex-1 truncate">{phrase}</span>
                                             <Button
                                                 variant="ghost"
@@ -471,3 +471,4 @@ export default function Home() {
     </main>
   );
 }
+
