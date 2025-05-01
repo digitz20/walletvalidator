@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, XCircle, Info, Shuffle, Trash2, Eraser, Copy, CopyCheck, Files } from 'lucide-react'; // Added Copy, CopyCheck, Files icons
+import { CheckCircle2, XCircle, Info, Shuffle, Trash2, Eraser, Copy, CopyCheck, Files, ListChecks } from 'lucide-react'; // Added ListChecks icon
 import { validateMnemonic, generateMnemonic } from 'bip39';
 import { wordlist } from '@/lib/bip39-wordlist';
 import {
@@ -15,11 +15,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input"; // Import Input
-import { Label } from "@/components/ui/label"; // Import Label
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
-import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 
 // BIP-39 allows 12, 15, 18, 21, or 24 words.
 // Each word must be from the official BIP-39 wordlist.
@@ -136,9 +136,9 @@ export default function Home() {
 
       setIsGeneratingBulk(true);
       setBulkGeneratedPhrases([]); // Clear previous bulk results
+      setCopiedIndex(null); // Reset copied state when generating new ones
 
-      // Generate phrases - consider a slight delay or worker for very large numbers within the limit if needed
-      // For now, direct generation up to MAX_BULK_GENERATE
+      // Generate phrases
       const generated: string[] = [];
       const strength = getStrengthForWordCount(bulkWordCount);
       try {
@@ -188,6 +188,36 @@ export default function Home() {
             console.error('Failed to copy all text: ', err);
             toast({ title: "Error", description: "Failed to copy all phrases.", variant: "destructive" });
         });
+    };
+
+  const handleValidateBulk = () => {
+        if (bulkGeneratedPhrases.length === 0) {
+            toast({
+                title: "No Phrases to Validate",
+                description: "Generate some phrases first.",
+                variant: "default",
+            });
+            return;
+        }
+
+        setIsValidating(true); // Use the same loading state or create a new one if needed
+        const validationResults = bulkGeneratedPhrases.map(phrase => {
+          const validation = validateSeedPhrase(phrase);
+          return {
+            phrase,
+            isValid: validation.isValid,
+            reason: validation.reason,
+          };
+        });
+
+        setResults(validationResults); // Update the main results display
+        setIsValidating(false);
+        toast({
+            title: "Bulk Validation Complete",
+            description: `${validationResults.length} phrases validated. Results shown below.`,
+        });
+        // Optionally scroll to results section
+         document.getElementById('validation-results-section')?.scrollIntoView({ behavior: 'smooth' });
     };
 
 
@@ -263,7 +293,7 @@ export default function Home() {
             </div>
 
             {results.length > 0 && (
-              <div className="mt-8 space-y-6">
+              <div id="validation-results-section" className="mt-8 space-y-6">
                 <Separator />
                 <div>
                   <h3 className="text-xl font-semibold mb-3 text-foreground">Validation Results</h3>
@@ -383,6 +413,15 @@ export default function Home() {
                                 <h3 className="text-lg font-semibold text-foreground">Generated Phrases ({bulkGeneratedPhrases.length})</h3>
                                 <div className="flex gap-2">
                                     <Button
+                                        onClick={handleValidateBulk}
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={isValidating} // Disable while validating
+                                        aria-label="Validate Bulk Generated Phrases"
+                                    >
+                                        <ListChecks className="mr-2 h-4 w-4" /> Validate Bulk
+                                    </Button>
+                                    <Button
                                         onClick={handleCopyAllBulk}
                                         variant="outline"
                                         size="sm"
@@ -403,6 +442,7 @@ export default function Home() {
                                 <ul className="space-y-2 font-mono text-sm">
                                     {bulkGeneratedPhrases.map((phrase, index) => (
                                         <li key={index} className="flex items-center justify-between gap-2 p-1 hover:bg-muted/50 rounded">
+                                            <span className="text-xs text-muted-foreground w-8 text-right mr-2">{index + 1}.</span>
                                             <span className="flex-1 truncate">{phrase}</span>
                                             <Button
                                                 variant="ghost"
@@ -431,4 +471,3 @@ export default function Home() {
     </main>
   );
 }
-
