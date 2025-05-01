@@ -5,23 +5,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, XCircle } from 'lucide-react';
-import { wordlist } from '@/lib/bip39-wordlist'; // Import the BIP-39 wordlist
+import { CheckCircle2, XCircle, Info } from 'lucide-react';
+import { validateMnemonic } from 'bip39'; // Import bip39 function
+import { wordlist } from '@/lib/bip39-wordlist'; // Keep wordlist for individual word check
 
 // BIP-39 allows 12, 15, 18, 21, or 24 words.
 // Each word must be from the official BIP-39 wordlist.
-// We'll validate the number of words and if each word exists in the list.
-// Note: This validation does NOT check the checksum, only the format and word validity.
+// We'll validate the number of words, if each word exists in the list,
+// and the BIP-39 checksum.
 
 interface ValidationResult {
-  phrase: string; // Changed from 'address' to 'phrase'
+  phrase: string;
   isValid: boolean;
   reason?: string; // Optional reason for invalidity
 }
 
 // Function to validate a single seed phrase
 const validateSeedPhrase = (phrase: string): { isValid: boolean; reason?: string } => {
-  const words = phrase.trim().toLowerCase().split(/\s+/);
+  const trimmedPhrase = phrase.trim().toLowerCase();
+  const words = trimmedPhrase.split(/\s+/);
   const wordCount = words.length;
 
   // 1. Check for valid word count (12, 15, 18, 21, 24)
@@ -29,30 +31,31 @@ const validateSeedPhrase = (phrase: string): { isValid: boolean; reason?: string
     return { isValid: false, reason: `Invalid word count (${wordCount}). Must be 12, 15, 18, 21, or 24.` };
   }
 
-  // 2. Check if all words are in the BIP-39 English wordlist
+  // 2. Check if all words are in the BIP-39 English wordlist (optional but good pre-check)
   const invalidWords = words.filter(word => !wordlist.has(word));
   if (invalidWords.length > 0) {
     return { isValid: false, reason: `Invalid words found: ${invalidWords.join(', ')}.` };
   }
 
-  // 3. Placeholder for future checksum validation (optional, complex)
-  // For now, if word count and words are valid, consider the format valid.
-  // const isValidChecksum = bip39.validateMnemonic(phrase); // Requires a library like 'bip39'
-  // if (!isValidChecksum) {
-  //   return { isValid: false, reason: 'Invalid checksum.' };
-  // }
+  // 3. Validate the mnemonic using the bip39 library (includes checksum validation)
+  const isValidMnemonic = validateMnemonic(trimmedPhrase);
+  if (!isValidMnemonic) {
+    // Checksum is likely the issue if word count and individual words are okay
+    return { isValid: false, reason: 'Invalid BIP-39 checksum or phrase structure.' };
+  }
 
+  // If all checks pass
   return { isValid: true };
 };
 
 export default function Home() {
-  const [seedInput, setSeedInput] = useState<string>(''); // Renamed state
+  const [seedInput, setSeedInput] = useState<string>('');
   const [results, setResults] = useState<ValidationResult[]>([]);
   const [isValidating, setIsValidating] = useState<boolean>(false);
 
   const handleValidate = () => {
     setIsValidating(true);
-    // Split by newline, assuming one phrase per line for simplicity
+    // Split by newline, assuming one phrase per line
     // Trim each line and filter out empty ones
     const phrases = seedInput
       .split('\n')
@@ -80,19 +83,19 @@ export default function Home() {
       <div className="w-full max-w-2xl">
         <Card className="shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold text-foreground">Seed Phrase Validator</CardTitle> {/* Updated Title */}
+            <CardTitle className="text-3xl font-bold text-foreground">Seed Phrase Validator</CardTitle>
             <CardDescription className="text-muted-foreground">
-              Enter or paste BIP-39 seed phrases below (one phrase per line).
-            </CardDescription> {/* Updated Description */}
+              Enter BIP-39 seed phrases (one per line). Validates word count, word list, and checksum.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <Textarea
-                placeholder="Paste seed phrases here, one per line..." // Updated Placeholder
+                placeholder="Paste seed phrases here, one per line..."
                 value={seedInput}
                 onChange={(e) => setSeedInput(e.target.value)}
                 rows={8}
-                className="text-sm resize-none bg-card border-input focus:ring-primary font-mono" // Use text-sm and font-mono
+                className="text-sm resize-none bg-card border-input focus:ring-primary font-mono"
                 aria-label="Seed Phrases Input"
               />
               <Button
@@ -101,7 +104,7 @@ export default function Home() {
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 aria-live="polite"
               >
-                {isValidating ? 'Validating...' : 'Validate Phrases'} {/* Updated Button Text */}
+                {isValidating ? 'Validating...' : 'Validate Phrases'}
               </Button>
             </div>
 
@@ -114,21 +117,26 @@ export default function Home() {
                      <Card className="mb-4 border-green-500">
                       <CardHeader className="p-4">
                         <CardTitle className="text-lg flex items-center gap-2 text-green-700">
-                          <CheckCircle2 className="h-5 w-5" /> Valid Phrases ({validPhrases.length}) {/* Updated Text */}
+                          <CheckCircle2 className="h-5 w-5" /> Valid BIP-39 Phrases ({validPhrases.length})
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <ul className="space-y-2 list-none text-sm text-foreground break-words"> {/* Increased space-y */}
+                      <CardContent className="p-4 pt-0 space-y-3">
+                        <ul className="space-y-2 list-none text-sm text-foreground break-words">
                           {validPhrases.map((result, index) => (
-                            <li key={`valid-${index}`} className="flex items-start gap-2 font-mono"> {/* Use items-start */}
-                               <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" /> {/* Add margin-top */}
-                               {/* Display first few and last few words for brevity */}
+                            <li key={`valid-${index}`} className="flex items-start gap-2 font-mono">
+                               <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
                                <span className="flex-1">
                                 {result.phrase.split(' ').slice(0, 3).join(' ')} ... {result.phrase.split(' ').slice(-3).join(' ')}
                                </span>
                             </li>
                           ))}
                         </ul>
+                         <div className="flex items-start gap-2 text-xs text-muted-foreground p-3 bg-muted/50 rounded-md border border-input">
+                           <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                           <span>
+                             A valid BIP-39 seed phrase is a standard recovery method. It doesn't inherently belong to a single cryptocurrency (like Bitcoin or Ethereum). It can be used with various wallets and derivation paths to access different accounts. This tool only validates the format, not its association with any specific wallet or coin.
+                           </span>
+                         </div>
                       </CardContent>
                     </Card>
                   )}
@@ -136,16 +144,15 @@ export default function Home() {
                      <Card className="border-destructive">
                       <CardHeader className="p-4">
                         <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-                          <XCircle className="h-5 w-5" /> Invalid Phrases ({invalidPhrases.length}) {/* Updated Text */}
+                          <XCircle className="h-5 w-5" /> Invalid Phrases ({invalidPhrases.length})
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
-                        <ul className="space-y-2 list-none text-sm text-foreground break-words"> {/* Increased space-y */}
+                        <ul className="space-y-2 list-none text-sm text-foreground break-words">
                           {invalidPhrases.map((result, index) => (
-                             <li key={`invalid-${index}`} className="flex items-start gap-2 font-mono"> {/* Use items-start */}
-                               <XCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" /> {/* Add margin-top */}
+                             <li key={`invalid-${index}`} className="flex items-start gap-2 font-mono">
+                               <XCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
                                <div className="flex-1">
-                                  {/* Display first few and last few words for brevity */}
                                   <span>
                                     {result.phrase.split(' ').slice(0, 3).join(' ')} ... {result.phrase.split(' ').slice(-3).join(' ')}
                                   </span>
