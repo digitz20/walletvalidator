@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, XCircle, Info } from 'lucide-react';
-import { validateMnemonic } from 'bip39'; // Import bip39 function
+import { CheckCircle2, XCircle, Info, Shuffle } from 'lucide-react';
+import { validateMnemonic, generateMnemonic } from 'bip39'; // Import bip39 functions
 import { wordlist } from '@/lib/bip39-wordlist'; // Keep wordlist for individual word check
 
 // BIP-39 allows 12, 15, 18, 21, or 24 words.
@@ -23,7 +24,9 @@ interface ValidationResult {
 // Function to validate a single seed phrase
 const validateSeedPhrase = (phrase: string): { isValid: boolean; reason?: string } => {
   const trimmedPhrase = phrase.trim().toLowerCase();
-  const words = trimmedPhrase.split(/\s+/);
+  // Normalize spaces: replace multiple spaces/newlines with a single space
+  const normalizedPhrase = trimmedPhrase.replace(/\s+/g, ' ');
+  const words = normalizedPhrase.split(' ');
   const wordCount = words.length;
 
   // 1. Check for valid word count (12, 15, 18, 21, 24)
@@ -38,7 +41,8 @@ const validateSeedPhrase = (phrase: string): { isValid: boolean; reason?: string
   }
 
   // 3. Validate the mnemonic using the bip39 library (includes checksum validation)
-  const isValidMnemonic = validateMnemonic(trimmedPhrase);
+  // Use the normalized phrase for validation
+  const isValidMnemonic = validateMnemonic(normalizedPhrase);
   if (!isValidMnemonic) {
     // Checksum is likely the issue if word count and individual words are okay
     return { isValid: false, reason: 'Invalid BIP-39 checksum or phrase structure.' };
@@ -75,6 +79,16 @@ export default function Home() {
     setIsValidating(false);
   };
 
+  const handleGenerateRandom = () => {
+    // Generate a 12-word mnemonic (default strength)
+    const mnemonic = generateMnemonic();
+    // Append to existing input or replace? Let's append for now.
+    setSeedInput(prev => prev ? `${prev}\n${mnemonic}` : mnemonic);
+    // Optionally clear previous results when generating a new one
+    setResults([]);
+  };
+
+
   const validPhrases = results.filter(r => r.isValid);
   const invalidPhrases = results.filter(r => !r.isValid);
 
@@ -83,7 +97,7 @@ export default function Home() {
       <div className="w-full max-w-2xl">
         <Card className="shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold text-foreground">Seed Phrase Validator</CardTitle>
+            <CardTitle className="text-3xl font-bold text-foreground">BIP-39 Seed Phrase Validator</CardTitle>
             <CardDescription className="text-muted-foreground">
               Enter BIP-39 seed phrases (one per line). Validates word count, word list, and checksum.
             </CardDescription>
@@ -98,14 +112,23 @@ export default function Home() {
                 className="text-sm resize-none bg-card border-input focus:ring-primary font-mono"
                 aria-label="Seed Phrases Input"
               />
-              <Button
-                onClick={handleValidate}
-                disabled={!seedInput || isValidating}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                aria-live="polite"
-              >
-                {isValidating ? 'Validating...' : 'Validate Phrases'}
-              </Button>
+               <div className="flex flex-col sm:flex-row gap-2">
+                 <Button
+                    onClick={handleValidate}
+                    disabled={!seedInput || isValidating}
+                    className="w-full sm:w-1/2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    aria-live="polite"
+                  >
+                    {isValidating ? 'Validating...' : 'Validate Phrases'}
+                  </Button>
+                  <Button
+                    onClick={handleGenerateRandom}
+                    variant="outline"
+                    className="w-full sm:w-1/2"
+                  >
+                    <Shuffle className="mr-2 h-4 w-4" /> Generate Random Phrase
+                  </Button>
+               </div>
             </div>
 
             {results.length > 0 && (
