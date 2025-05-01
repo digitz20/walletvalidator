@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, XCircle, Info, Shuffle, Trash2 } from 'lucide-react'; // Added Trash2
+import { CheckCircle2, XCircle, Info, Shuffle, Trash2 } from 'lucide-react';
 import { validateMnemonic, generateMnemonic } from 'bip39'; // Import bip39 functions
 import { wordlist } from '@/lib/bip39-wordlist'; // Keep wordlist for individual word check
 import {
@@ -107,9 +107,9 @@ export default function Home() {
     setResults([]);
   };
 
-  const handleClearAll = () => {
+  const handleClearInput = () => {
     setSeedInput('');
-    setResults([]);
+    // Do not clear results here: setResults([]);
   };
 
 
@@ -163,13 +163,13 @@ export default function Home() {
                       </DropdownMenuContent>
                   </DropdownMenu>
                   <Button
-                    onClick={handleClearAll}
-                    disabled={!seedInput && results.length === 0}
+                    onClick={handleClearInput} // Changed function name for clarity
+                    disabled={!seedInput} // Only disable if there is no input
                     variant="outline"
                     className="w-full sm:flex-1"
-                    aria-label="Clear All Input and Results"
+                    aria-label="Clear Input Field" // Updated aria-label
                   >
-                    <Trash2 className="mr-2 h-4 w-4" /> Clear All
+                    <Trash2 className="mr-2 h-4 w-4" /> Clear Input
                   </Button>
                </div>
             </div>
@@ -239,4 +239,3 @@ export default function Home() {
     </main>
   );
 }
-
