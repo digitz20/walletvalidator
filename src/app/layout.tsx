@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Wallet Validator',
-  description: 'Validate Bitcoin and Ethereum wallet address formats.',
+  title: 'Seed Phrase Validator',
+  description: 'Validate BIP-39 seed phrase formats.',
 };
 
 export default function RootLayout({
