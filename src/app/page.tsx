@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, XCircle, Info, Shuffle, Trash2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Info, Shuffle, Trash2, Eraser } from 'lucide-react'; // Added Eraser icon
 import { validateMnemonic, generateMnemonic } from 'bip39'; // Import bip39 functions
 import { wordlist } from '@/lib/bip39-wordlist'; // Keep wordlist for individual word check
 import {
@@ -104,12 +104,16 @@ export default function Home() {
     // Append to existing input on a new line
     setSeedInput(prev => prev ? `${prev}\n${mnemonic}` : mnemonic);
     // Optionally clear previous results when generating a new one
-    setResults([]);
+    // setResults([]); // Keep results if user wants to generate more and validate later
   };
 
   const handleClearInput = () => {
     setSeedInput('');
     // Do not clear results here: setResults([]);
+  };
+
+  const handleClearResults = () => {
+    setResults([]); // Clear only the results
   };
 
 
@@ -136,11 +140,11 @@ export default function Home() {
                 className="text-sm resize-none bg-card border-input focus:ring-primary font-mono"
                 aria-label="Seed Phrases Input"
               />
-               <div className="flex flex-col sm:flex-row gap-2">
+               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                  <Button
                     onClick={handleValidate}
                     disabled={!seedInput || isValidating}
-                    className="w-full sm:flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     aria-live="polite"
                   >
                     {isValidating ? 'Validating...' : 'Validate Phrases'}
@@ -149,9 +153,9 @@ export default function Home() {
                      <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full sm:flex-1"
+                        className="w-full"
                       >
-                        <Shuffle className="mr-2 h-4 w-4" /> Generate Random
+                        <Shuffle className="mr-2 h-4 w-4" /> Generate
                       </Button>
                     </DropdownMenuTrigger>
                      <DropdownMenuContent align="end" className="w-[200px]">
@@ -163,14 +167,23 @@ export default function Home() {
                       </DropdownMenuContent>
                   </DropdownMenu>
                   <Button
-                    onClick={handleClearInput} // Changed function name for clarity
-                    disabled={!seedInput} // Only disable if there is no input
+                    onClick={handleClearInput}
+                    disabled={!seedInput}
                     variant="outline"
-                    className="w-full sm:flex-1"
-                    aria-label="Clear Input Field" // Updated aria-label
+                    className="w-full"
+                    aria-label="Clear Input Field"
                   >
                     <Trash2 className="mr-2 h-4 w-4" /> Clear Input
                   </Button>
+                  <Button
+                      onClick={handleClearResults}
+                      disabled={results.length === 0} // Disable if no results
+                      variant="outline"
+                      className="w-full"
+                      aria-label="Clear Validation Results"
+                    >
+                      <Eraser className="mr-2 h-4 w-4" /> Clear Results
+                    </Button>
                </div>
             </div>
 
@@ -239,3 +252,4 @@ export default function Home() {
     </main>
   );
 }
+
